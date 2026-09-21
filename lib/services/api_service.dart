@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/rune.dart';
-import '../models/runeword.dart'; // Asegúrate de que esta importación esté aquí
+import '../models/runeword.dart'; 
 
 class ApiService {
   // Reemplaza esto con la URL real de tu API en Render
-  static const String baseUrl = 'https://tu-url-de-render.onrender.com/api'; 
+   static const String baseUrl = 'http://localhost:3000/api';
 
   Future<List<Rune>> getRunes() async {
     try {
