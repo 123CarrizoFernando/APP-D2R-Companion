@@ -5,7 +5,7 @@ import '../models/rune.dart';
 class ApiService {
   // Para probar en el emulador de Android hacia tu PC local, usa 10.0.2.2
   // Si usas navegador/iOS, usa 127.0.0.1
-  static const String baseUrl = 'http://127.0.0.1:3000/api'; 
+  static const String baseUrl = 'https://d2r-companion.onrender.com'; 
 
   Future<List<Rune>> getRunes() async {
     try {
