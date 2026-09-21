@@ -7,7 +7,7 @@ import '../models/character_build.dart'; // Importación de tu nuevo modelo
 
 class ApiService {
   // Asegúrate de usar la URL que corresponda (localhost o Render)
-  static const String baseUrl = 'https://tu-url-de-render.onrender.com/api'; 
+  static const String baseUrl = 'https://api-d2r-companion.onrender.com/api'; 
 
   Future<List<Rune>> getRunes() async {
     try {

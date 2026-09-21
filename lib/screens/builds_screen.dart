@@ -54,6 +54,7 @@ class _BuildsScreenState extends State<BuildsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // --- CABECERA DE LA BUILD ---
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -72,9 +73,11 @@ class _BuildsScreenState extends State<BuildsScreen> {
                       const SizedBox(height: 8),
                       Text('Budget: ${build.budgetLevel ?? "N/A"}', style: const TextStyle(color: AppColors.textNormal)),
                       const Divider(color: Colors.white24, height: 20),
+                      
+                      // --- SECCIÓN DE EQUIPO PRINCIPAL ---
                       const Text('RECOMMENDED GEAR:', style: TextStyle(color: AppColors.runeOrange, fontWeight: FontWeight.bold, fontSize: 14)),
                       const SizedBox(height: 8),
-                      // Listar el equipo iterando sobre la lista de la base de datos
+                      
                       ...build.equipment.map((eq) {
                         String itemName = eq.uniqueItemName ?? eq.runewordName ?? 'Unknown';
                         Color itemColor = eq.uniqueItemName != null ? AppColors.uniqueGold : AppColors.runeOrange;
@@ -100,6 +103,38 @@ class _BuildsScreenState extends State<BuildsScreen> {
                           ),
                         );
                       }),
+
+                      // --- SECCIÓN DE MERCENARIOS ---
+                      if (build.mercenaries.isNotEmpty) ...[
+                        const Divider(color: Colors.white24, height: 30),
+                        const Text('MERCENARY OPTIONS:', style: TextStyle(color: AppColors.uniqueGold, fontWeight: FontWeight.bold, fontSize: 14)),
+                        const SizedBox(height: 8),
+                        ...build.mercenaries.map((merc) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12.0),
+                            padding: const EdgeInsets.all(8.0),
+                            decoration: BoxDecoration(
+                              color: Colors.black26,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.white10),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('${merc.setupName} (${merc.mercenaryType})', style: const TextStyle(color: AppColors.magicBlue, fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 4),
+                                if (merc.weapon != null) Text('Weapon: ${merc.weapon}', style: const TextStyle(color: AppColors.textNormal, fontSize: 13)),
+                                if (merc.helm != null) Text('Helm: ${merc.helm}', style: const TextStyle(color: AppColors.textNormal, fontSize: 13)),
+                                if (merc.armor != null) Text('Armor: ${merc.armor}', style: const TextStyle(color: AppColors.textNormal, fontSize: 13)),
+                                if (merc.justification != null) ...[
+                                  const SizedBox(height: 6),
+                                  Text(merc.justification!, style: const TextStyle(color: Colors.white54, fontSize: 12, fontStyle: FontStyle.italic)),
+                                ]
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
                     ],
                   ),
                 ),
