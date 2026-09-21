@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
 import 'runes_screen.dart'; // Agregamos el import de la nueva pantalla
 import 'runewords_screen.dart';
+import 'items_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -26,7 +27,7 @@ class HomeScreen extends StatelessWidget {
           _buildMenuCard(context, '🔥 Runewords', AppColors.runeOrange, const RunewordsScreen()),
           _buildMenuCard(context, '🛡️ Bases', AppColors.textNormal, null),
           _buildMenuCard(context, '💎 Runes', AppColors.runeOrange, const RunesScreen()),
-          _buildMenuCard(context, '⚔️ Items', AppColors.uniqueGold, null),
+          _buildMenuCard(context, '⚔️ Items', AppColors.uniqueGold, const ItemsScreen()),
           _buildMenuCard(context, '👹 Mercenarios', AppColors.textNormal, null),
         ],
       ),
