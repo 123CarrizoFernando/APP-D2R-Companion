@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/unique_item.dart';
 import '../services/api_service.dart';
 import '../utils/app_colors.dart';
@@ -13,18 +14,44 @@ class ItemsScreen extends StatefulWidget {
 class _ItemsScreenState extends State<ItemsScreen> {
   final ApiService _apiService = ApiService();
   late Future<List<UniqueItem>> _itemsFuture;
+  
+  final Set<String> _foundItems = {};
+  String _searchQuery = ''; // Nueva variable para el texto de búsqueda
 
   @override
   void initState() {
     super.initState();
     _itemsFuture = _apiService.getUniqueItems();
+    _loadFoundItems();
+  }
+
+  Future<void> _loadFoundItems() async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<String>? savedItems = prefs.getStringList('holy_grail_items');
+    if (savedItems != null) {
+      setState(() {
+        _foundItems.addAll(savedItems);
+      });
+    }
+  }
+
+  Future<void> _toggleItem(String itemId) async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      if (_foundItems.contains(itemId)) {
+        _foundItems.remove(itemId);
+      } else {
+        _foundItems.add(itemId);
+      }
+    });
+    await prefs.setStringList('holy_grail_items', _foundItems.toList());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('UNIQUE ITEMS', style: TextStyle(letterSpacing: 2.0)),
+        title: const Text('HOLY GRAIL (UNIQUES)', style: TextStyle(letterSpacing: 2.0)),
         centerTitle: true,
       ),
       body: FutureBuilder<List<UniqueItem>>(
@@ -39,60 +66,137 @@ class _ItemsScreenState extends State<ItemsScreen> {
           }
 
           final items = snapshot.data!;
-          
-          return ListView.builder(
-            itemCount: items.length,
-            padding: const EdgeInsets.all(8.0),
-            itemBuilder: (context, index) {
-              final item = items[index];
+          final progress = _foundItems.length / items.length;
 
-              return Card(
-                color: AppColors.panel,
-                margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        item.name,
-                        style: const TextStyle(color: AppColors.uniqueGold, fontWeight: FontWeight.bold, fontSize: 20),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Required Level: ${item.levelRequired}',
-                        style: const TextStyle(color: AppColors.textNormal, fontSize: 13),
-                      ),
-                      if (item.isEtherealPossible)
-                        const Text(
-                          '(Ethereal Available)',
-                          style: TextStyle(color: Colors.white38, fontSize: 12, fontStyle: FontStyle.italic),
-                        ),
-                      const Divider(color: Colors.white24, height: 20),
-                      // Iteramos sobre las stats del JSON
-                      ...item.attributes.entries.map((stat) {
-                        String statName = stat.key.replaceAll('_', ' ').toUpperCase();
-                        String statValue = stat.value.toString();
-                        
-                        // Si el valor es una lista (un rango como [20, 30]), lo formateamos con un guion
-                        if (stat.value is List) {
-                          statValue = '${stat.value[0]} - ${stat.value[1]}';
-                        }
+          // Filtramos la lista basándonos en lo que el usuario escribió
+          final filteredItems = items.where((item) {
+            return item.name.toLowerCase().contains(_searchQuery.toLowerCase());
+          }).toList();
 
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 2.0),
-                          child: Text(
-                            '$statName: $statValue',
-                            style: const TextStyle(color: AppColors.magicBlue, fontSize: 14),
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
+          return Column(
+            children: [
+              // Barra de progreso superior
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                color: Colors.black54,
+                child: Row(
+                  children: [
+                    const Text('Progress:', style: TextStyle(color: AppColors.uniqueGold, fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        backgroundColor: Colors.white12,
+                        color: AppColors.uniqueGold,
+                        minHeight: 8,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text('${_foundItems.length}/${items.length}', style: const TextStyle(color: AppColors.textNormal)),
+                  ],
                 ),
-              );
-            },
+              ),
+              
+              // Barra de Búsqueda
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: 'Search items (e.g., Shako, Griffon...)',
+                    hintStyle: const TextStyle(color: Colors.white54),
+                    prefixIcon: const Icon(Icons.search, color: AppColors.uniqueGold),
+                    filled: true,
+                    fillColor: AppColors.panel,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                ),
+              ),
+
+              // Lista de Items Filtrada
+              Expanded(
+                child: filteredItems.isEmpty
+                    ? const Center(child: Text('No items match your search.', style: TextStyle(color: Colors.white54)))
+                    : ListView.builder(
+                        itemCount: filteredItems.length,
+                        padding: const EdgeInsets.all(8.0),
+                        itemBuilder: (context, index) {
+                          final item = filteredItems[index];
+                          final isFound = _foundItems.contains(item.id.toString());
+
+                          return GestureDetector(
+                            onTap: () => _toggleItem(item.id.toString()),
+                            child: Card(
+                              color: isFound ? Colors.black45 : AppColors.panel,
+                              margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
+                              shape: RoundedRectangleBorder(
+                                side: BorderSide(
+                                  color: isFound ? Colors.green.withOpacity(0.5) : Colors.transparent,
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        if (isFound) const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                                        if (isFound) const SizedBox(width: 8),
+                                        Text(
+                                          item.name,
+                                          style: TextStyle(
+                                            color: isFound ? AppColors.uniqueGold.withOpacity(0.6) : AppColors.uniqueGold, 
+                                            fontWeight: FontWeight.bold, 
+                                            fontSize: 20,
+                                            decoration: isFound ? TextDecoration.lineThrough : null,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Required Level: ${item.levelRequired}',
+                                      style: const TextStyle(color: AppColors.textNormal, fontSize: 13),
+                                    ),
+                                    const Divider(color: Colors.white24, height: 20),
+                                    ...item.attributes.entries.map((stat) {
+                                      String statName = stat.key.replaceAll('_', ' ').toUpperCase();
+                                      String statValue = stat.value.toString();
+                                      if (stat.value is List) statValue = '${stat.value[0]} - ${stat.value[1]}';
+
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 2.0),
+                                        child: Text(
+                                          '$statName: $statValue',
+                                          style: TextStyle(
+                                            color: isFound ? AppColors.magicBlue.withOpacity(0.6) : AppColors.magicBlue, 
+                                            fontSize: 14
+                                          ),
+                                        ),
+                                      );
+                                    }),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
           );
         },
       ),

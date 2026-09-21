@@ -4,6 +4,9 @@ import 'runes_screen.dart'; // Agregamos el import de la nueva pantalla
 import 'runewords_screen.dart';
 import 'items_screen.dart';
 import 'builds_screen.dart';
+import 'calculator_screen.dart';
+import 'breakpoints_screen.dart';
+
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -29,6 +32,8 @@ class HomeScreen extends StatelessWidget {
           _buildMenuCard(context, '🛡️ Bases', AppColors.textNormal, null),
           _buildMenuCard(context, '💎 Runes', AppColors.runeOrange, const RunesScreen()),
           _buildMenuCard(context, '⚔️ Items', AppColors.uniqueGold, const ItemsScreen()),
+          _buildMenuCard(context, '⚡ Breakpoints', AppColors.magicBlue, const BreakpointsScreen()),
+          _buildMenuCard(context, '🛠️ Calculator', AppColors.runeOrange, const CalculatorScreen()),
           _buildMenuCard(context, '👹 Mercenarios', AppColors.textNormal, null),
         ],
       ),
