@@ -69,4 +69,14 @@ class ApiService {
       throw Exception('Error de red: $e');
     }
   }
+  Future<List<dynamic>> getSets() async {
+  final response = await http.get(Uri.parse('$baseUrl/api/sets'));
+  if (response.statusCode == 200) {
+    return json.decode(response.body);
+  } else {
+    throw Exception('Error al cargar los sets');
+  }
 }
+
+}
+

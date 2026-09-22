@@ -6,6 +6,8 @@ import 'items_screen.dart';
 import 'builds_screen.dart';
 import 'calculator_screen.dart';
 import 'breakpoints_screen.dart';
+import 'sets_screen.dart';
+import 'classes_screen.dart';
 
 
 class HomeScreen extends StatelessWidget {
@@ -34,6 +36,8 @@ class HomeScreen extends StatelessWidget {
           _buildMenuCard(context, '⚔️ Items', AppColors.uniqueGold, const ItemsScreen()),
           _buildMenuCard(context, '⚡ Breakpoints', AppColors.magicBlue, const BreakpointsScreen()),
           _buildMenuCard(context, '🛠️ Calculator', AppColors.runeOrange, const CalculatorScreen()),
+          _buildMenuCard(context, '🟩 Item Sets', Colors.green, const SetsScreen()),
+          _buildMenuCard(context, '⚔️ Class Builds', AppColors.uniqueGold, const ClassesScreen()),
           _buildMenuCard(context, '👹 Mercenarios', AppColors.textNormal, null),
         ],
       ),
