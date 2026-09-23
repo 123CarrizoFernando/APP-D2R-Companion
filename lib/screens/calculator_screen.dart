@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/rune.dart';
-import '../models/runeword.dart';
 import '../services/api_service.dart';
 import '../utils/app_colors.dart';
 
@@ -15,7 +14,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   final ApiService _apiService = ApiService();
   
   List<Rune> _allRunes = [];
-  List<Runeword> _allRunewords = [];
+  // Ahora usamos List<dynamic> para coincidir con la API actualizada
+  List<dynamic> _allRunewords = []; 
   final Set<String> _ownedRunes = {};
   
   bool _isLoading = true;
@@ -44,15 +44,17 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     }
   }
 
-  // Lógica principal: Verifica si el jugador tiene todas las runas necesarias
-  bool _canCraft(Runeword rw) {
-    if (rw.runes == null || rw.runes!.isEmpty) return false;
+  // Lógica actualizada: Lee las runas desde el String del JSON (ej: "Tal + Thul + Ort + Amn")
+  bool _canCraft(dynamic rw) {
+    final runesString = rw['runes']?.toString() ?? '';
+    if (runesString.isEmpty) return false;
     
-    // Hacemos una copia temporal del inventario para contar runas duplicadas
+    // Separamos el string por los signos '+' y limpiamos los espacios
+    List<String> requiredRunes = runesString.split('+').map((e) => e.trim()).toList();
     List<String> tempInventory = _ownedRunes.toList();
     
-    for (var rune in rw.runes!) {
-      if (tempInventory.contains(rune.name)) {
+    for (var runeName in requiredRunes) {
+      if (tempInventory.contains(runeName)) {
         // En una app más compleja restaríamos la cantidad, aquí asumimos cantidad ilimitada 
         // del tipo de runa seleccionada para mantener la interfaz limpia.
       } else {
@@ -111,7 +113,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
-                              color: isSelected ? AppColors.runeOrange.withOpacity(0.3) : AppColors.panel,
+                              // Reemplazamos withOpacity por withValues para evitar el deprecation warning
+                              color: isSelected ? AppColors.runeOrange.withValues(alpha: 0.3) : AppColors.panel,
                               border: Border.all(color: isSelected ? AppColors.runeOrange : Colors.white24),
                               borderRadius: BorderRadius.circular(4),
                             ),
@@ -143,14 +146,17 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                       itemCount: craftableRunewords.length,
                       itemBuilder: (context, index) {
                         final rw = craftableRunewords[index];
-                        final recipe = rw.runes?.map((r) => r.name).join(' + ') ?? '';
+                        final name = rw['name'] ?? 'Unknown';
+                        final recipe = rw['runes'] ?? '';
+                        final level = rw['level_requirement'] ?? '--';
+                        final bases = rw['allowed_bases'] ?? 'Any';
 
                         return Card(
                           color: AppColors.panel,
                           margin: const EdgeInsets.symmetric(vertical: 4.0),
                           child: ListTile(
-                            title: Text(rw.name, style: const TextStyle(color: AppColors.uniqueGold, fontWeight: FontWeight.bold)),
-                            subtitle: Text('Sockets: ${rw.socketsRequired} | Level: ${rw.levelRequired}\n$recipe', style: const TextStyle(color: AppColors.magicBlue)),
+                            title: Text(name, style: const TextStyle(color: AppColors.uniqueGold, fontWeight: FontWeight.bold)),
+                            subtitle: Text('Bases: $bases | Level: $level\n$recipe', style: const TextStyle(color: AppColors.magicBlue)),
                             isThreeLine: true,
                           ),
                         );

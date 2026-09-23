@@ -61,12 +61,10 @@ class _BuildDetailScreenState extends State<BuildDetailScreen> {
     return itemName.toLowerCase().replaceAll(' ', '_').replaceAll('\'', '');
   }
 
-  // WIDGET REUTILIZABLE PARA CUALQUIER ÍTEM (Jugador o Mercenario)
   Widget _buildItemCard(dynamic item) {
     final itemName = item['unique_item_name'];
     final runewordName = item['runeword_name'];
     
-    // Si el slot está vacío (ej. no tiene un arma sugerida), no dibujamos la tarjeta
     if (itemName == null && runewordName == null) return const SizedBox.shrink();
 
     final displayName = itemName ?? runewordName;
@@ -170,67 +168,127 @@ class _BuildDetailScreenState extends State<BuildDetailScreen> {
   Widget build(BuildContext context) {
     final equipment = widget.buildData['equipment'] as List<dynamic>? ?? [];
     final merc = widget.buildData['mercenary'];
+    final className = widget.buildData['character_class'].toString().toLowerCase();
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.buildData['name'].toUpperCase())),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('PLAYSTYLE & STRATEGY', style: TextStyle(color: AppColors.uniqueGold, fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(8)),
-              child: Text(
-                widget.buildData['description'] ?? 'No description available.',
-                style: const TextStyle(color: Colors.white, fontSize: 15, height: 1.4),
+      // CustomScrollView reemplaza al SingleChildScrollView para permitir efectos Parallax
+      body: CustomScrollView(
+        slivers: [
+          // CABECERA DEL PERSONAJE (Se encoge y mueve al scrollear)
+          SliverAppBar(
+            expandedHeight: 250.0,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text(widget.buildData['name'].toUpperCase(), 
+                style: const TextStyle(
+                  color: Colors.white, 
+                  shadows: [Shadow(color: Colors.black, blurRadius: 4)]
+                )
+              ),
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    'assets/classes/$className.png', // ej. assets/classes/sorceress.png
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                    errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey.shade900),
+                  ),
+                  // Un degradado para que el texto sea legible
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.center,
+                        colors: [Colors.black87, Colors.transparent],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
+          ),
+          
+          // CONTENIDO PRINCIPAL DE LA BUILD
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('PLAYSTYLE & STRATEGY', style: TextStyle(color: AppColors.uniqueGold, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(8)),
+                    child: Text(
+                      widget.buildData['description'] ?? 'No description available.',
+                      style: const TextStyle(color: Colors.white, fontSize: 15, height: 1.4),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
 
-            const Text('REQUIRED GEAR & HOLY GRAIL', style: TextStyle(color: AppColors.uniqueGold, fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            
-            // Aquí dibujamos el equipo del jugador con nuestra nueva función
-            ...equipment.map((item) => _buildItemCard(item)),
+                  const Text('REQUIRED GEAR & HOLY GRAIL', style: TextStyle(color: AppColors.uniqueGold, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  
+                  ...equipment.map((item) => _buildItemCard(item)),
 
-            const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-            // SECCIÓN DEL MERCENARIO ACTUALIZADA
-            if (merc != null) ...[
-              const Text('MERCENARY SETUP', style: TextStyle(color: AppColors.uniqueGold, fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              
-              // Información base del mercenario
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E2E),
-                  border: Border.all(color: Colors.blueGrey.withOpacity(0.5)),
-                  borderRadius: BorderRadius.circular(8)
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Act ${merc['act']} ${merc['type']} - ${merc['aura']} Aura', style: const TextStyle(color: Colors.cyanAccent, fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 6),
-                    Text(merc['justification'] ?? '', style: const TextStyle(color: Colors.white70, fontSize: 13, fontStyle: FontStyle.italic)),
+                  // SECCIÓN DEL MERCENARIO CON IMAGEN
+                  if (merc != null) ...[
+                    const Text('MERCENARY SETUP', style: TextStyle(color: AppColors.uniqueGold, fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    
+                    Container(
+                      width: double.infinity,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E1E2E),
+                        border: Border.all(color: Colors.blueGrey.withOpacity(0.5)),
+                        borderRadius: BorderRadius.circular(8)
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Imagen del Mercenario
+                          Container(
+                            height: 120,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: AssetImage('assets/mercenaries/${merc['type'].toString().toLowerCase().replaceAll(' ', '_')}.png'), // ej. desert_mercenary.png
+                                fit: BoxFit.cover,
+                                alignment: Alignment.topCenter,
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Act ${merc['act']} ${merc['type']} - ${merc['aura']} Aura', style: const TextStyle(color: Colors.cyanAccent, fontSize: 16, fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 6),
+                                Text(merc['justification'] ?? '', style: const TextStyle(color: Colors.white70, fontSize: 13, fontStyle: FontStyle.italic)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    
+                    if (merc['gear'] != null)
+                      ...(merc['gear'] as List<dynamic>).map((item) => _buildItemCard(item)),
+
+                    const SizedBox(height: 24),
                   ],
-                ),
+                ],
               ),
-              
-              // Aquí dibujamos el equipo del mercenario usando LA MISMA FUNCIÓN
-              if (merc['gear'] != null)
-                ...(merc['gear'] as List<dynamic>).map((item) => _buildItemCard(item)),
-
-              const SizedBox(height: 24),
-            ],
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,15 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/rune.dart';
-import '../models/runeword.dart';
 import '../models/unique_item.dart';
-// Puedes dejar esta importación por si la usas en otra parte, aunque aquí ya no mapearemos a este modelo
-
 
 class ApiService {
   // Asegúrate de usar la URL que corresponda (localhost o Render)
   static const String baseUrl = 'https://api-d2r-companion.onrender.com/api'; 
-
+  
+  // ... resto de tu código ...
   Future<List<Rune>> getRunes() async {
     try {
       final response = await http.get(Uri.parse('${ApiService.baseUrl}/runes'));
@@ -25,13 +23,12 @@ class ApiService {
     }
   }
 
-  Future<List<Runeword>> getRunewords() async {
+Future<List<dynamic>> getRunewords() async {
     try {
       final response = await http.get(Uri.parse('${ApiService.baseUrl}/runewords'));
 
       if (response.statusCode == 200) {
-        List<dynamic> decodedList = jsonDecode(response.body);
-        return decodedList.map((json) => Runeword.fromJson(json)).toList();
+        return jsonDecode(response.body); // Retorna la lista cruda para usarla en la UI
       } else {
         throw Exception('Fallo al cargar las palabras rúnicas: ${response.statusCode}');
       }

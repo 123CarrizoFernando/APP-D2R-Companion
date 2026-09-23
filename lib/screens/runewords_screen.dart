@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../models/runeword.dart';
 import '../services/api_service.dart';
 import '../utils/app_colors.dart';
 
@@ -12,92 +11,153 @@ class RunewordsScreen extends StatefulWidget {
 
 class _RunewordsScreenState extends State<RunewordsScreen> {
   final ApiService _apiService = ApiService();
-  late Future<List<Runeword>> _runewordsFuture;
+  List<dynamic> _allRunewords = [];
+  List<dynamic> _filteredRunewords = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _runewordsFuture = _apiService.getRunewords();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final data = await _apiService.getRunewords();
+      setState(() {
+        _allRunewords = data;
+        _filteredRunewords = data;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      debugPrint('Error loading runewords: $e');
+    }
+  }
+
+  void _filterRunewords(String query) {
+    if (query.isEmpty) {
+      setState(() => _filteredRunewords = _allRunewords);
+      return;
+    }
+
+    final lowerQuery = query.toLowerCase();
+    setState(() {
+      _filteredRunewords = _allRunewords.where((rw) {
+        final name = rw['name']?.toString().toLowerCase() ?? '';
+        // Asumiendo que tu base de datos tiene una columna 'allowed_bases' o 'bases'
+        final bases = rw['allowed_bases']?.toString().toLowerCase() ?? ''; 
+        return name.contains(lowerQuery) || bases.contains(lowerQuery);
+      }).toList();
+    });
+  }
+
+  String _formatAttributes(Map<String, dynamic>? attrs) {
+    if (attrs == null || attrs.isEmpty) return 'Stats not available.';
+    return attrs.entries.map((e) {
+      final key = e.key.replaceAll('_', ' ').toUpperCase();
+      return '+${e.value} $key';
+    }).join('\n');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('RUNEWORDS', style: TextStyle(letterSpacing: 2.0)),
+        title: const Text('RUNEWORDS CATALOG'),
         centerTitle: true,
-      ),
-      body: FutureBuilder<List<Runeword>>(
-        future: _runewordsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.uniqueGold));
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No se encontraron palabras rúnicas.', style: TextStyle(color: AppColors.textNormal)));
-          }
-
-          final runewords = snapshot.data!;
-          
-          return ListView.builder(
-            itemCount: runewords.length,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60.0),
+          child: Padding(
             padding: const EdgeInsets.all(8.0),
-            itemBuilder: (context, index) {
-              final rw = runewords[index];
-              // Unimos los nombres de las runas en un String (Ej: Tal + Thul + Ort + Amn)
-              final runeCombination = rw.runes?.map((r) => r.name).join(' + ') ?? '';
-
-              return Card(
-                color: AppColors.panel,
-                margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
-                child: Padding(
+            child: TextField(
+              onChanged: _filterRunewords,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Search by name or base (e.g., Sword, Shield)...',
+                hintStyle: const TextStyle(color: Colors.white54),
+                prefixIcon: const Icon(Icons.search, color: AppColors.uniqueGold),
+                filled: true,
+                fillColor: Colors.black45,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.runeOrange))
+          : _filteredRunewords.isEmpty
+              ? const Center(child: Text('No runewords found.', style: TextStyle(color: Colors.white54)))
+              : ListView.builder(
                   padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            rw.name,
-                            style: const TextStyle(color: AppColors.uniqueGold, fontWeight: FontWeight.bold, fontSize: 20),
+                  itemCount: _filteredRunewords.length,
+                  itemBuilder: (context, index) {
+                    final rw = _filteredRunewords[index];
+                    final name = rw['name'] ?? 'Unknown';
+                    final runes = rw['runes'] ?? ''; 
+                    final level = rw['level_requirement'] ?? '--';
+                    final bases = rw['allowed_bases'] ?? 'Any';
+                    final attributes = rw['attributes'];
+
+                    return Card(
+                      color: AppColors.panel,
+                      margin: const EdgeInsets.only(bottom: 12.0),
+                      shape: RoundedRectangleBorder(
+                        side: BorderSide(color: AppColors.runeOrange.withOpacity(0.3), width: 1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ExpansionTile(
+                        iconColor: AppColors.runeOrange,
+                        collapsedIconColor: Colors.white54,
+                        title: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              name,
+                              style: const TextStyle(color: AppColors.uniqueGold, fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              'Lvl $level',
+                              style: const TextStyle(color: Colors.redAccent, fontSize: 14, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                runes, // Ej: "Tal + Thul + Ort + Amn"
+                                style: const TextStyle(color: AppColors.runeOrange, fontSize: 15, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                bases, // Ej: "4 Socket Swords/Shields"
+                                style: const TextStyle(color: Colors.white70, fontSize: 13, fontStyle: FontStyle.italic),
+                              ),
+                            ],
                           ),
-                          Text(
-                            'Lvl ${rw.levelRequired}',
-                            style: const TextStyle(color: AppColors.textNormal),
+                        ),
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            color: Colors.black45,
+                            padding: const EdgeInsets.all(16.0),
+                            child: Text(
+                              _formatAttributes(attributes),
+                              style: const TextStyle(color: AppColors.magicBlue, fontSize: 14, height: 1.4),
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Sockets: ${rw.socketsRequired}',
-                        style: const TextStyle(color: AppColors.textNormal, fontSize: 14),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        runeCombination,
-                        style: const TextStyle(color: AppColors.runeOrange, fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                      const Divider(color: Colors.white24, height: 20),
-                      // Iteramos sobre las llaves del JSONB para mostrar las stats
-                      ...rw.attributes.entries.map((stat) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 2.0),
-                          child: Text(
-                            '${stat.key.replaceAll('_', ' ').toUpperCase()}: ${stat.value}',
-                            style: const TextStyle(color: AppColors.magicBlue, fontSize: 13),
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
+                    );
+                  },
                 ),
-              );
-            },
-          );
-        },
-      ),
     );
   }
 }

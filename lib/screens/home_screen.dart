@@ -44,6 +44,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+
   // Agregamos un parámetro 'Widget? destination'
   Widget _buildMenuCard(BuildContext context, String title, Color color, Widget? destination) {
     return Card(

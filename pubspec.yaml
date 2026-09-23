@@ -26,3 +26,5 @@ flutter:
   assets:
     - assets/fonts/
     - assets/items/
+    - assets/classes/      
+    - assets/mercenaries/  
