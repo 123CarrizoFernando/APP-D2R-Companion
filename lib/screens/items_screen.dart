@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/unique_item.dart';
 import '../services/api_service.dart';
 import '../utils/app_colors.dart';
 
@@ -13,10 +12,11 @@ class ItemsScreen extends StatefulWidget {
 
 class _ItemsScreenState extends State<ItemsScreen> {
   final ApiService _apiService = ApiService();
-  late Future<List<UniqueItem>> _itemsFuture;
+  // Cambiado a List<dynamic> para coincidir con la API
+  late Future<List<dynamic>> _itemsFuture; 
   
   final Set<String> _foundItems = {};
-  String _searchQuery = ''; // Nueva variable para el texto de búsqueda
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -54,7 +54,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
         title: const Text('HOLY GRAIL (UNIQUES)', style: TextStyle(letterSpacing: 2.0)),
         centerTitle: true,
       ),
-      body: FutureBuilder<List<UniqueItem>>(
+      body: FutureBuilder<List<dynamic>>(
         future: _itemsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -66,16 +66,15 @@ class _ItemsScreenState extends State<ItemsScreen> {
           }
 
           final items = snapshot.data!;
-          final progress = _foundItems.length / items.length;
+          final progress = items.isEmpty ? 0.0 : _foundItems.length / items.length;
 
-          // Filtramos la lista basándonos en lo que el usuario escribió
           final filteredItems = items.where((item) {
-            return item.name.toLowerCase().contains(_searchQuery.toLowerCase());
+            final name = item['name']?.toString().toLowerCase() ?? '';
+            return name.contains(_searchQuery.toLowerCase());
           }).toList();
 
           return Column(
             children: [
-              // Barra de progreso superior
               Container(
                 padding: const EdgeInsets.all(16.0),
                 color: Colors.black54,
@@ -97,7 +96,6 @@ class _ItemsScreenState extends State<ItemsScreen> {
                 ),
               ),
               
-              // Barra de Búsqueda
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextField(
@@ -121,7 +119,6 @@ class _ItemsScreenState extends State<ItemsScreen> {
                 ),
               ),
 
-              // Lista de Items Filtrada
               Expanded(
                 child: filteredItems.isEmpty
                     ? const Center(child: Text('No items match your search.', style: TextStyle(color: Colors.white54)))
@@ -130,16 +127,23 @@ class _ItemsScreenState extends State<ItemsScreen> {
                         padding: const EdgeInsets.all(8.0),
                         itemBuilder: (context, index) {
                           final item = filteredItems[index];
-                          final isFound = _foundItems.contains(item.id.toString());
+                          // Leemos los valores del JSON usando corchetes
+                          final itemId = item['id'].toString();
+                          final itemName = item['name'] ?? 'Unknown';
+                          final itemLevel = item['level_requirement'] ?? '--';
+                          final Map<String, dynamic> attributes = item['attributes'] ?? {};
+                          
+                          final isFound = _foundItems.contains(itemId);
 
                           return GestureDetector(
-                            onTap: () => _toggleItem(item.id.toString()),
+                            onTap: () => _toggleItem(itemId),
                             child: Card(
                               color: isFound ? Colors.black45 : AppColors.panel,
                               margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
                               shape: RoundedRectangleBorder(
                                 side: BorderSide(
-                                  color: isFound ? Colors.green.withOpacity(0.5) : Colors.transparent,
+                                  // Reemplazado withOpacity por withValues
+                                  color: isFound ? Colors.green.withValues(alpha: 0.5) : Colors.transparent,
                                   width: 1,
                                 ),
                                 borderRadius: BorderRadius.circular(4),
@@ -155,9 +159,10 @@ class _ItemsScreenState extends State<ItemsScreen> {
                                         if (isFound) const Icon(Icons.check_circle, color: Colors.green, size: 20),
                                         if (isFound) const SizedBox(width: 8),
                                         Text(
-                                          item.name,
+                                          itemName,
                                           style: TextStyle(
-                                            color: isFound ? AppColors.uniqueGold.withOpacity(0.6) : AppColors.uniqueGold, 
+                                            // Reemplazado withOpacity por withValues
+                                            color: isFound ? AppColors.uniqueGold.withValues(alpha: 0.6) : AppColors.uniqueGold, 
                                             fontWeight: FontWeight.bold, 
                                             fontSize: 20,
                                             decoration: isFound ? TextDecoration.lineThrough : null,
@@ -168,11 +173,11 @@ class _ItemsScreenState extends State<ItemsScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Required Level: ${item.levelRequired}',
+                                      'Required Level: $itemLevel',
                                       style: const TextStyle(color: AppColors.textNormal, fontSize: 13),
                                     ),
                                     const Divider(color: Colors.white24, height: 20),
-                                    ...item.attributes.entries.map((stat) {
+                                    ...attributes.entries.map((stat) {
                                       String statName = stat.key.replaceAll('_', ' ').toUpperCase();
                                       String statValue = stat.value.toString();
                                       if (stat.value is List) statValue = '${stat.value[0]} - ${stat.value[1]}';
@@ -182,7 +187,8 @@ class _ItemsScreenState extends State<ItemsScreen> {
                                         child: Text(
                                           '$statName: $statValue',
                                           style: TextStyle(
-                                            color: isFound ? AppColors.magicBlue.withOpacity(0.6) : AppColors.magicBlue, 
+                                            // Reemplazado withOpacity por withValues
+                                            color: isFound ? AppColors.magicBlue.withValues(alpha: 0.6) : AppColors.magicBlue, 
                                             fontSize: 14
                                           ),
                                         ),

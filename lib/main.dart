@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'utils/app_colors.dart';
 import 'screens/home_screen.dart';
-import 'runewords_screen.dart';
+
 
 void main() {
   runApp(const D2RCompanionApp());

@@ -1,86 +1,54 @@
 import 'package:flutter/material.dart';
-import '../utils/app_colors.dart';
-import 'runes_screen.dart'; // Agregamos el import de la nueva pantalla
-import 'runewords_screen.dart';
-import 'items_screen.dart';
 import 'builds_screen.dart';
 import 'calculator_screen.dart';
-import 'breakpoints_screen.dart';
+import 'runewords_screen.dart';
+import 'items_screen.dart';
+import '../utils/app_colors.dart';
 import 'sets_screen.dart';
-import 'classes_screen.dart';
-
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
+
+  Widget _buildMenuButton(BuildContext context, String title, Widget screen) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          // Reemplazado withOpacity por withValues
+          backgroundColor: AppColors.panel.withValues(alpha: 0.8), 
+          padding: const EdgeInsets.all(20.0),
+          side: const BorderSide(color: AppColors.uniqueGold, width: 1),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => screen));
+        },
+        child: Text(
+          title, 
+          style: const TextStyle(fontSize: 16, color: AppColors.uniqueGold, fontWeight: FontWeight.bold, letterSpacing: 1.2)
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'D2R COMPANION', 
-          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 2.0)
-        ),
+        title: const Text('D2R COMPANION', style: TextStyle(letterSpacing: 2.0)),
         centerTitle: true,
       ),
-      body: GridView.count(
-        crossAxisCount: 2,
-        padding: const EdgeInsets.all(16.0),
-        mainAxisSpacing: 16.0,
-        crossAxisSpacing: 16.0,
-        children: [
-          _buildMenuCard(context, '🧙 Builds', AppColors.uniqueGold, const BuildsScreen()),
-          _buildMenuCard(context, '🔥 Runewords', AppColors.runeOrange, const RunewordsScreen()),
-          _buildMenuCard(context, '🛡️ Bases', AppColors.textNormal, null),
-          _buildMenuCard(context, '💎 Runes', AppColors.runeOrange, const RunesScreen()),
-          _buildMenuCard(context, '⚔️ Items', AppColors.uniqueGold, const ItemsScreen()),
-          _buildMenuCard(context, '⚡ Breakpoints', AppColors.magicBlue, const BreakpointsScreen()),
-          _buildMenuCard(context, '🛠️ Calculator', AppColors.runeOrange, const CalculatorScreen()),
-          _buildMenuCard(context, '🟩 Item Sets', Colors.green, const SetsScreen()),
-          _buildMenuCard(context, '⚔️ Class Builds', AppColors.uniqueGold, const ClassesScreen()),
-          _buildMenuCard(context, '👹 Mercenarios', AppColors.textNormal, null),
-        ],
-      ),
-    );
-  }
-
-
-  // Agregamos un parámetro 'Widget? destination'
-  Widget _buildMenuCard(BuildContext context, String title, Color color, Widget? destination) {
-    return Card(
-      color: AppColors.panel,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: color.withOpacity(0.5), width: 1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: () {
-          if (destination != null) {
-            // Si hay un destino, navegamos a esa pantalla
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => destination),
-            );
-          } else {
-            // Si no, mostramos el cartel de "Cargando"
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Cargando $title...'),
-                backgroundColor: AppColors.panel,
-              ),
-            );
-          }
-        },
-        child: Center(
-          child: Text(
-            title,
-            style: TextStyle(
-              color: color,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+      body: Center(
+        child: ListView(
+          padding: const EdgeInsets.symmetric(vertical: 24.0),
+          children: [
+            _buildMenuButton(context, 'CLASS BUILDS', const BuildsScreen()),
+            _buildMenuButton(context, 'RUNE CALCULATOR', const CalculatorScreen()),
+            _buildMenuButton(context, 'RUNEWORDS CATALOG', const RunewordsScreen()),
+            // Tu ItemScreen ya es tu Holy Grail tracker oficial
+            _buildMenuButton(context, 'HOLY GRAIL (UNIQUES)', const ItemsScreen()),
+            _buildMenuButton(context, 'SET ITEMS DATABASE', const SetsScreen()),
+          ],
         ),
       ),
     );

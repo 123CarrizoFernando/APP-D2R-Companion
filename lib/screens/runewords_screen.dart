@@ -45,8 +45,11 @@ class _RunewordsScreenState extends State<RunewordsScreen> {
     setState(() {
       _filteredRunewords = _allRunewords.where((rw) {
         final name = rw['name']?.toString().toLowerCase() ?? '';
-        // Asumiendo que tu base de datos tiene una columna 'allowed_bases' o 'bases'
-        final bases = rw['allowed_bases']?.toString().toLowerCase() ?? ''; 
+        
+        // Manejo seguro para allowed_bases si es una lista
+        final basesData = rw['allowed_bases'];
+        final bases = basesData is List ? basesData.join(' ').toLowerCase() : basesData?.toString().toLowerCase() ?? '';
+        
         return name.contains(lowerQuery) || bases.contains(lowerQuery);
       }).toList();
     });
@@ -98,16 +101,22 @@ class _RunewordsScreenState extends State<RunewordsScreen> {
                   itemBuilder: (context, index) {
                     final rw = _filteredRunewords[index];
                     final name = rw['name'] ?? 'Unknown';
-                    final runes = rw['runes'] ?? ''; 
                     final level = rw['level_requirement'] ?? '--';
-                    final bases = rw['allowed_bases'] ?? 'Any';
+                    
+                    // Manejo seguro de listas (Convierte ["Tal", "Thul"] en "Tal + Thul")
+                    final runesData = rw['runes'];
+                    final runes = runesData is List ? runesData.join(' + ') : runesData?.toString() ?? '';
+                    
+                    final basesData = rw['allowed_bases'];
+                    final bases = basesData is List ? basesData.join(', ') : basesData?.toString() ?? 'Any';
+                    
                     final attributes = rw['attributes'];
 
                     return Card(
                       color: AppColors.panel,
                       margin: const EdgeInsets.only(bottom: 12.0),
                       shape: RoundedRectangleBorder(
-                        side: BorderSide(color: AppColors.runeOrange.withOpacity(0.3), width: 1),
+                        side: BorderSide(color: AppColors.runeOrange.withValues(alpha: 0.3), width: 1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: ExpansionTile(
@@ -132,12 +141,12 @@ class _RunewordsScreenState extends State<RunewordsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                runes, // Ej: "Tal + Thul + Ort + Amn"
+                                runes,
                                 style: const TextStyle(color: AppColors.runeOrange, fontSize: 15, fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                bases, // Ej: "4 Socket Swords/Shields"
+                                bases,
                                 style: const TextStyle(color: Colors.white70, fontSize: 13, fontStyle: FontStyle.italic),
                               ),
                             ],
